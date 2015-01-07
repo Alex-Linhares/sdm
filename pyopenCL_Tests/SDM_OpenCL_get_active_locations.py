@@ -55,7 +55,7 @@ def Get_Bitstring_GPU_Buffer(ctx):
 	return bitstring_gpu
 
 def Create_Memory_Addresses():
-	memory_addresses = numpy.random.random_integers(0,2**32,size=(2**20)*8).astype(numpy.uint32)
+	memory_addresses = numpy.random.random_integers(0,2**32,size=(HARD_LOCATIONS)*8).astype(numpy.uint32)
 	return memory_addresses
 
 def Get_Memory_Addresses_Buffer(ctx):
