@@ -26,7 +26,7 @@ import numpy as np
 import numpy.linalg as la
 import sys
 from pytools import memoize
-from test_array import general_clrand
+#from test_array import general_clrand
 
 import pytest
 
@@ -38,14 +38,26 @@ from pyopencl.characterize import has_double_support
 from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
 
+scan_test_counts = [
+    10,
+    2 ** 8 - 1,
+    2 ** 8,
+    2 ** 8 + 1,
+    2 ** 10 - 5,
+    2 ** 10,
+    2 ** 10 + 5,
+    2 ** 12 - 5,
+    2 ** 12,
+    2 ** 12 + 5,
+    ]
+
 def test_copy_if(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
 
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
     from pyopencl.clrandom import rand as clrand
+
+    
     for n in scan_test_counts:
         a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
         a = a_dev.get()
@@ -61,9 +73,9 @@ def test_copy_if(ctx_factory):
         from gc import collect
         collect()
 
-
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 mem_flags = cl.mem_flags
+
 
 test_copy_if(ctx)
