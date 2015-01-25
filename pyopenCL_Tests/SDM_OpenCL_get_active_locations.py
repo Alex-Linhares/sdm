@@ -59,7 +59,7 @@ def Get_Hash_Table_GPU_Buffer(ctx):
 	return hash_table_gpu
 
 def Get_Hamming_Distances():
-	hamming_distances = numpy.zeros(HARD_LOCATIONS).astype(numpy.uint32) 
+	hamming_distances = numpy.zeros(HARD_LOCATIONS).astype(numpy.uint32) #32 BITS??????
 	return hamming_distances
 
 def Get_Distances_GPU_Buffer(ctx):
@@ -68,8 +68,8 @@ def Get_Distances_GPU_Buffer(ctx):
 	return hamming_distances_gpu
 
 def Get_Random_Bitstring():
-	bitstring = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
-	return bitstring
+	bitstrings = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
+	return bitstrings
 
 
 def Get_Bitstring_GPU_Buffer(ctx):

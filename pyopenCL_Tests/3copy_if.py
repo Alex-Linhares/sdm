@@ -37,19 +37,9 @@ from pyopencl.tools import (  # noqa
 from pyopencl.characterize import has_double_support
 from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
+PYOPENCL_COMPILER_OUTPUT=1
 
-scan_test_counts = [
-    10,
-    2 ** 8 - 1,
-    2 ** 8,
-    2 ** 8 + 1,
-    2 ** 10 - 5,
-    2 ** 10,
-    2 ** 10 + 5,
-    2 ** 12 - 5,
-    2 ** 12,
-    2 ** 12 + 5,
-    ]
+scan_test_counts = [2 ** 12 + 5]
 
 def test_copy_if(ctx_factory):
     from pytest import importorskip
@@ -60,18 +50,20 @@ def test_copy_if(ctx_factory):
     
     for n in scan_test_counts:
         a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
-        a = a_dev.get()
+        #a = a_dev.get()
 
         from pyopencl.algorithm import copy_if
 
-        crit = a_dev.dtype.type(300)
-        selected = a[a > crit]
-        selected_dev, count_dev, evt = copy_if(
-                a_dev, "ary[i] > myval", [("myval", crit)])
+        crit = a_dev.dtype.type(6)
+        #selected = a[a < crit]
+        selected_dev, count_dev, evt = copy_if(a_dev, "ary[i] < myval", [("myval", crit)])
 
-        assert (selected_dev.get()[:count_dev.get()] == selected).all()
-        from gc import collect
-        collect()
+        print count_dev
+        print selected_dev[selected_dev>0]
+        
+        #assert (selected_dev.get()[:count_dev.get()] == selected).all()
+        #from gc import collect
+        #collect()
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
