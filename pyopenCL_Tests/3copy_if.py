@@ -69,5 +69,4 @@ ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 mem_flags = cl.mem_flags
 
-
 test_copy_if(ctx)
