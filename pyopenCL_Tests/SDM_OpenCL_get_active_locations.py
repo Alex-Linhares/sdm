@@ -81,10 +81,6 @@ def Create_Memory_Addresses():
 	memory_addresses = numpy.random.random_integers(0,2**32,size=(HARD_LOCATIONS)*8).astype(numpy.uint32)
 	return memory_addresses
 
-def Get_Memory_Addresses_Buffer(ctx):
-	memory_addresses = Create_Memory_Addresses() 	
-	memory_addresses_gpu = cl.Buffer(ctx, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=memory_addresses)
-	return memory_addresses_gpu
 
 def Get_Text_code(filename):
 	with open (filename, "r") as myfile:
@@ -129,22 +125,21 @@ def Get_Active_Locations2(bitstring, ctx):
 
 
 def Get_Active_Locations3(bitstring, ctx):
-	err = prg.clear_hash_table_gpu(queue, (HASH_TABLE_SIZE,), None, hash_table_gpu.data).wait()
+	hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
  
-	err = prg.get_active_hard_locations_32bit(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu, bitstring_gpu, distances_gpu, hash_table_gpu.data ).wait()
-	if err: print 'Error --> ',err
+	prg.get_active_hard_locations_32bit(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu, hash_table_gpu.data ).wait()
+	#if err: print 'Error --> ',err
 
 	active_hard_locations_gpu, count_active_gpu, event = copy_if(hash_table_gpu, "ary[i] > 0")  
 
-	err = prg.get_HL_distances_from_gpu(queue, (HASH_TABLE_SIZE,), None, active_hard_locations_gpu.data, hash_table_gpu.data, distances_gpu)
+	Num_HLs = int(count_active_gpu.get())
 
-	# YOU DON'T NEED THE COUNT!!!  THERE ARE LESS THAN 2000.  COPY THEM ALL, CLEAN WITH NUMPY.
-	# at this point, I have active_hard_locations_gpu and the distances are in hash_table_gpu 
-	# need to create 2000-sized buffers and copy the first 2000 entries, then clean up in numpy 
 
-	Num_HLs = count_active_gpu.get()
+	prg.get_HL_distances_from_gpu(queue, (Num_HLs,), None, active_hard_locations_gpu.data, hash_table_gpu.data, distances_gpu)
 
-	return Num_HLs, active_hard_locations_gpu.get()[:Num_HLs], hash_table_gpu.get()[:Num_HLs] 
+	prg.copy_final_results(queue, (Num_HLs,), None, final_locations_gpu.data, active_hard_locations_gpu.data, final_distances_gpu.data, hash_table_gpu.data)
+	# err = 
+	return Num_HLs, final_locations_gpu.get()[:Num_HLs], final_distances_gpu.get()[:Num_HLs] 
 
 
 
@@ -153,23 +148,21 @@ criteria = 104
 OpenCL_code = Get_Text_code ('GPU_Code_OpenCLv1_2.cl')
 
 import os
+import pyopencl.array as cl_array
+
 os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 
 
-memory_addresses_gpu = Get_Memory_Addresses_Buffer(ctx)
+memory_addresses_gpu = cl_array.to_device(queue, Create_Memory_Addresses()) 
+
 distances_host = Get_Hamming_Distances
-#dev_data = cl_array.to_device(queue, host_data)
+
 distances_gpu = Get_Distances_GPU_Buffer(ctx)
 
-#active_host = numpy.zeros(HASH_TABLE_SIZE).astype(numpy.int32) 
-import pyopencl.array as cl_array
-#active_gpu = cl_array.to_device(queue, active_host)
-hash_table_host = Get_Hash_Table()
-
-hash_table_gpu = cl_array.to_device(queue, hash_table_host) 
 
 
-#start = time.time()  delete
+final_locations_gpu = cl_array.zeros(queue, (BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS,), dtype=numpy.int32)
+final_distances_gpu = cl_array.zeros(queue, (BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS,), dtype=numpy.int32)
 
 prg = cl.Program(ctx, OpenCL_code).build()
 
@@ -180,9 +173,9 @@ hamming_distances = Get_Hamming_Distances()
 print "\n"
 
 
-num_times = 16000
+num_times = 2000
 Results_and_Statistics = numpy.zeros(num_times+1).astype(numpy.uint32) 
-usual_result = 2238155
+usual_result = 2238155  # for 2000 runs of 2^20 hard locations
 
 '''
 print '\n\n===================================================='
@@ -227,7 +220,11 @@ print '\n\n===================================================='
 start = time.time()
 for x in range(num_times):
 	bitstring_gpu = Get_Bitstring_GPU_Buffer(ctx)
+
+	#bitstring_gpu = cl_array.to_device(queue, Get_Random_Bitstring()) 	
+
 	num_active_hard_locations, active_hard_locations, distances = Get_Active_Locations3(bitstring_gpu,  ctx) 
+
 	Results_and_Statistics[x] = num_active_hard_locations
 	
 time_elapsed = (time.time()-start)
