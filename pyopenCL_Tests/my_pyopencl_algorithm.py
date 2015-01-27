@@ -42,8 +42,9 @@ _copy_if_template = ScanTemplate(
         arguments="item_t *ary, item_t *out, scan_t *count",
         input_expr="(%(predicate)s) ? 1 : 0",
         scan_expr="a+b", neutral="0",
+        #THIS MAY BE THE WAY TO INDEXES!  out[item-1] = i
         output_statement="""
-            if (prev_item != item) out[item-1] = ary[i];
+            if (prev_item != item) out[item-1] = ary[i];  
             if (i+1 == N) *count = item;
             """,
         template_processor="printf")
@@ -147,7 +148,29 @@ def copy_if_2(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     evt = knl(ary, out, count, *extra_args_values,
             **dict(queue=queue, wait_for=wait_for))
 
-    return out, count, evt 
+
+    #import pyopencl.array as cl_array
+    #final_locations_gpu = cl_array.zeros(queue, (BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS,), dtype=numpy.int32)
+    final_gpu = cl.array.Array(ary.context, (count,), dtype=scan_dtype) 
+
+    '''
+    Now I need to copy the first count values from out to final_gpu
+    '''
+
+    copy_kernel = cl.Program(ary.context, """ 
+    __kernel void copy_final_results(__global int *final_gpu, __global int *out_gpu) 
+    { 
+    __private int gid; 
+    gid = get_global_id(0); 
+    //final_locations_gpu [gid] = active_hard_locations_gpu [gid]; 
+    final_gpu [gid] = out_gpu [gid]; 
+    } 
+    """).build() 
+
+    prg.copy_kernel(ary.context, (int(count),), None, final_gpu, out).wait()  
+
+    return final_gpu, evt 
+    #return out, count, evt 
 
 # }}}
 
