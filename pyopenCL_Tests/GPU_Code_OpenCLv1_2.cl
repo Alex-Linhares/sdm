@@ -123,6 +123,53 @@ __kernel void get_HL_distances_from_gpu(__global int *active_hard_locations_gpu,
     hash_table_gpu[ gid ] = distances [ active_hard_locations_gpu [gid] ];
 }
 
+
+__kernel void get_HL_distances_from_gpu2(__global int *active_hard_locations_gpu, __global int *hash_table_gpu, __global int *distances, __global int *final_locations_gpu, __global int *final_distances_gpu)
+{
+  __private int gid;
+  gid = get_global_id(0);
+  if (active_hard_locations_gpu[gid])
+    hash_table_gpu[ gid ] = distances [ active_hard_locations_gpu [gid] ];
+  final_locations_gpu [gid] = active_hard_locations_gpu [gid];
+  final_distances_gpu [gid] = hash_table_gpu [gid];  
+}
+
+
+
+
+__kernel void get_HL_distances_from_gpu3(__global int *active_hard_locations_gpu, __global int *hash_table_gpu, __global int *distances, __global int *final_locations_gpu, __global int *final_distances_gpu)
+{
+  __private int gid;
+  gid = get_global_id(0);
+  if (active_hard_locations_gpu[gid]) {
+    final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
+    final_locations_gpu [gid] = active_hard_locations_gpu [gid];
+  }
+}
+
+
+__kernel void get_HL_distances_from_gpu4(__global int *active_hard_locations_gpu, __global int *distances, __global int *final_locations_gpu, __global int *final_distances_gpu)
+{
+  __private int gid;
+  gid = get_global_id(0);
+  if (active_hard_locations_gpu[gid]) {
+    final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
+    final_locations_gpu [gid] = active_hard_locations_gpu [gid];
+  }
+}
+
+__kernel void get_HL_distances_from_gpu5(__global int *active_hard_locations_gpu, __global int *distances, __global int *final_locations_gpu, __global int *final_distances_gpu)
+{
+  __private int gid;
+  gid = get_global_id(0);
+  final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
+  final_locations_gpu [gid] = active_hard_locations_gpu [gid];
+}
+
+
+
+
+
 __kernel void copy_final_results(__global int *final_locations_gpu, __global int *active_hard_locations_gpu, __global int *final_distances_gpu, __global int *hash_table_gpu)
 {
   __private int gid;
@@ -130,6 +177,9 @@ __kernel void copy_final_results(__global int *final_locations_gpu, __global int
   final_locations_gpu [gid] = active_hard_locations_gpu [gid];
   final_distances_gpu [gid] = hash_table_gpu [gid];
 }
+
+
+
 
 __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances)
 {
