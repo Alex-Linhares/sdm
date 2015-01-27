@@ -183,7 +183,7 @@ __kernel void copy_final_results(__global int *final_locations_gpu, __global int
 
 __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances)
 {
-  __private uint mem_pos;
+  __private int mem_pos;
   __private ulong4 Aux;
         
   mem_pos = get_global_id(0);
@@ -196,7 +196,7 @@ __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bi
 //COULD this be faster with no distances buffer?
 __kernel void get_active_hard_locations_no_dist_buffer(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *bin_active_index)
 {
-  __private uint mem_pos;
+  __private int mem_pos;
   __private ulong4 Aux;
   __private uint bin_pos;
   __private uint distance;
