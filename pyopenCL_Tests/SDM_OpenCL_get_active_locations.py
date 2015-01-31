@@ -219,7 +219,7 @@ hamming_distances = Get_Hamming_Distances()
 print "\n"
 
 
-num_times = 2000
+num_times = 16000
 Results_and_Statistics = numpy.zeros(num_times+1).astype(numpy.uint32) 
 usual_result = 2238155  # for 2000 runs of 2^20 hard locations
 
