@@ -2,9 +2,6 @@
 
 import ctypes
 
-import matplotlib
-matplotlib.use('TkAgg') 
-
 class InitializedError(Exception):
     pass
 
@@ -21,12 +18,6 @@ _libsdm.bs_copy.restype = ctypes.POINTER(ctypes.c_void_p)
 _libsdm.bs_average.restype = ctypes.POINTER(ctypes.c_void_p)
 
 _libsdm.sdm_thread_read.restype = ctypes.POINTER(ctypes.c_void_p)
-<<<<<<< HEAD
-=======
-_libsdm.sdm_read_chada.restype = ctypes.POINTER(ctypes.c_void_p)
-_libsdm.sdm_thread_read_chada.restype = ctypes.POINTER(ctypes.c_void_p)
-#_libsdm.sdm_thread_read_cubed.restype = ctypes.POINTER(ctypes.c_void_p)
->>>>>>> FETCH_HEAD
 
 _dimension = ctypes.c_int.in_dll(_libsdm, 'bs_dimension')
 _radius = ctypes.c_int.in_dll(_libsdm, 'sdm_radius')
@@ -142,15 +133,7 @@ def thread_write(address, data):
         raise NotInitializedError
     return _libsdm.sdm_thread_write(address._bitstring, data._bitstring)
 
-
-
 def thread_read(address):
-    global initialized
-    if not initialized:
-        raise NotInitializedError
-    return Bitstring(bitstring=_libsdm.sdm_thread_read(address._bitstring))
-
-def thread_read_cubed(address):
     global initialized
     if not initialized:
         raise NotInitializedError
@@ -161,7 +144,7 @@ def thread_read_chada(address):
     if not initialized:
         raise NotInitializedError
     return Bitstring(bitstring=_libsdm.sdm_thread_read_chada(address._bitstring))
-    
+
 class Bitstring(object):
     @classmethod
     def distance(cls, a, b):

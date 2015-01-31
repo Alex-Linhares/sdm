@@ -142,43 +142,10 @@ unsigned int bs_distance(bitstring* a, bitstring* b) {
 	return dist;
 }
 
-<<<<<<< HEAD:src/core/bitstring.c
 // TODO Make it an inline function. [msbrogli 2014-02-01]
 int bs_bit(bitstring* a, int bit) {
-=======
-inline unsigned int bs_distance2(bitstring* a, bitstring* b) {
-	register unsigned int i;
-	unsigned int dist;
-	uint64_t c;
-	
-	dist = 0;
-	for(i=0; i<bs_len; i++) {
-		c = a[i] ^ b[i];
-		dist += __builtin_popcountll (c);
-	}
-	return dist;
-}
-
-
-inline int bs_bit(bitstring* a, int bit) {
->>>>>>> FETCH_HEAD:sdm/bitstring.c
 	int i = bit/64, j = bit%64;
 	return (a[bs_len-1-i]&((uint64_t)1<<j) ? 1 : 0);
-}
-
-bitstring* bs_init_adder_linhares(bitstring* hl_address, adder_t* adder, float avg) {
-	unsigned int i;
-	bitstring* a = bs_copy(hl_address);
-	for(i=0; i<bs_dimension; i++) {
-		if(adder[i] > avg) bs_bit_copy_NOT(hl_address, a, i);
-	}
-	return a;
-}
-
-bitstring* bs_bit_copy_NOT(bitstring* a, bitstring *b, int bit) {
-	int i = bit/64, j = bit%64;
-	a[bs_len-1-i]&((uint64_t)1<<j) ? bs_bitset(b, i) : bs_bitclear(b,i);
-	return b;
 }
 
 int bs_bitsign(bitstring* a, int bit) {
