@@ -110,7 +110,7 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
 # }}}
 
 
-def copy_if_2(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
+def sparse_copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a `bool`, represented as a string.
@@ -148,31 +148,112 @@ def copy_if_2(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     evt = knl(ary, out, count, *extra_args_values,
             **dict(queue=queue, wait_for=wait_for))
 
-
-    #import pyopencl.array as cl_array
-    #final_locations_gpu = cl_array.zeros(queue, (BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS,), dtype=numpy.int32)
-    final_gpu = cl.array.Array(ary.context, (count,), dtype=scan_dtype) 
-
     '''
-    Now I need to copy the first count values from out to final_gpu
+    Now I need to copy the first num_results values from out to final_gpu (in which buffer size is minimized)
     '''
 
-    copy_kernel = cl.Program(ary.context, """ 
+    prg = cl.Program(ary.context, """ 
     __kernel void copy_final_results(__global int *final_gpu, __global int *out_gpu) 
     { 
-    __private int gid; 
+    __private uint gid; 
     gid = get_global_id(0); 
-    //final_locations_gpu [gid] = active_hard_locations_gpu [gid]; 
     final_gpu [gid] = out_gpu [gid]; 
     } 
     """).build() 
 
-    prg.copy_kernel(ary.context, (int(count),), None, final_gpu, out).wait()  
+    num_results= int(count.get())
+
+    final_gpu = pyopencl.array.Array(queue, (num_results,), dtype=scan_dtype)
+
+    prg.copy_final_results (queue, (num_results,), None, final_gpu.data, out.data)  
 
     return final_gpu, evt 
     #return out, count, evt 
 
 # }}}
+
+
+
+
+
+
+
+
+
+def sparse_copy_if_with_distances(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
+    """Copy the elements of *ary* satisfying *predicate* to an output array.
+
+    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
+        The value to test is available as `ary[i]`, and if the expression evaluates
+        to `true`, then this value ends up in the output.
+    :arg extra_args: |scan_extra_args|
+    :arg preamble: |preamble|
+    :arg wait_for: |explain-waitfor|
+    :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
+        is an on-device scalar (fetch to host with `count.get()`) indicating
+        how many elements satisfied *predicate*, and *event* is a
+        :class:`pyopencl.Event` for dependency management. *out* is allocated
+        to the same length as *ary*, but only the first *count* entries carry
+        meaning.
+
+    .. versionadded:: 2013.1
+    """
+    if len(ary) > np.iinfo(np.int32).max:
+        scan_dtype = np.int64
+    else:
+        scan_dtype = np.int32
+
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+
+
+    knl = _copy_if_template.build(ary.context,
+            type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
+            var_values=(("predicate", predicate),),
+            more_preamble=preamble, more_arguments=extra_args_types)
+    out = cl.array.empty_like(ary)
+    count = ary._new_with_changes(data=None, offset=0,
+            shape=(), strides=(), dtype=scan_dtype)
+
+    # **dict is a Py2.5 workaround
+    evt = knl(ary, out, count, *extra_args_values,
+            **dict(queue=queue, wait_for=wait_for))
+
+    '''
+    Now I need to copy the first num_results values from out to final_gpu (in which buffer size is minimized)
+    '''
+
+    prg = cl.Program(ary.context, """ 
+    __kernel void copy_final_results(__global int *final_gpu, __global int *out_gpu) 
+    { 
+    __private uint gid; 
+    gid = get_global_id(0); 
+    final_gpu [gid] = out_gpu [gid]; 
+    } 
+
+
+
+    __kernel void get_HL_distances_from_gpu(__global int *active_hard_locations_gpu, __global int *distances, __global int *final_distances_gpu)
+    {
+    __private int gid;
+    gid = get_global_id(0);  
+    final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
+
+    """).build() 
+
+    num_results= int(count.get())
+
+    final_gpu = pyopencl.array.Array(queue, (num_results,), dtype=scan_dtype)
+    final_distances_gpu = pyopencl.array.Array(queue, (num_results,), dtype=scan_dtype)
+
+    prg.copy_final_results (queue, (num_results,), None, final_gpu.data, out.data) 
+    prg.get_HL_distances_from_gpu(final_gpu.data, distances_gpu.data, final_distances_gpu.data) 
+
+    return final_gpu, finaldistances_gpu, evt 
+    #return out, count, evt 
+
+# }}}
+
+
 
 # {{{ remove_if
 
