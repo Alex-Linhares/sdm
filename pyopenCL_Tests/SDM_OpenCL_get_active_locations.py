@@ -105,7 +105,6 @@ def write_x_at_x_kanerva(active_hard_locations, bitstring):
     for pos in numpy.nditer(active_hard_locations):
         bitstring = SDM_addresses[pos,0:8]
         
-        
         for dimension in range (256):
             uint_to_check_bit = ((dimension // maximum) + dimension % maximum ) // 32
             #print dimension
@@ -115,7 +114,7 @@ def write_x_at_x_kanerva(active_hard_locations, bitstring):
                 sdm_values[pos,dimension] +=1
             elif not(add): 
                 sdm_values[pos,dimension] -=1
-        #print 'location', pos,'has been updated to',sdm_values[pos,]
+        print 'location', pos,'has been updated to',sdm_values[pos,]
 
 
 '''
