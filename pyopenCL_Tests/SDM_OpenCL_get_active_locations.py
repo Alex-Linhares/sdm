@@ -9,7 +9,7 @@ import time
 HARD_LOCATIONS = 2**20
 DIMENSIONS = 256
 BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS = 1300  #Compute analytically; prove it's safe... 
-
+maximum = (2**32)-1
 HASH_TABLE_SIZE =  25033 
 HASH_TABLE_SIZE_FILE = \
 "#define HASH_TABLE_SIZE 25033 \n\
@@ -61,8 +61,7 @@ def Get_Random_Bitstring():
     return bitstrings
 
 
-def Get_Bitstring_GPU_Buffer(ctx):
-    bitstring = Get_Random_Bitstring()
+def Get_Bitstring_GPU_Buffer(ctx, bitstring):
     bitstring_gpu = cl.Buffer(ctx, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=bitstring)
     return bitstring_gpu
 
@@ -96,22 +95,38 @@ def Get_Text_code(filename):
         return HASH_TABLE_SIZE_FILE + data 
 
 def create_sdm_values():
-    return numpy.zeros((HASH_TABLE_SIZE, DIMENSIONS), dtype = numpy.int8)
+    return numpy.zeros((HARD_LOCATIONS, DIMENSIONS), dtype = numpy.int8)
+
+
+
+
+def write_x_at_x_kanerva(active_hard_locations, bitstring):
+    maximum=255 #isn't it 255?
+    for pos in numpy.nditer(active_hard_locations):
+        bitstring = SDM_addresses[pos,0:8]
+        
+        
+        for dimension in range (256):
+            uint_to_check_bit = ((dimension // maximum) + dimension % maximum ) // 32
+            #print dimension
+            add = bool((bitstring [uint_to_check_bit]  &  (1<< dimension%32  ) ))
+            #print add
+            if add: 
+                sdm_values[pos,dimension] +=1
+            elif not(add): 
+                sdm_values[pos,dimension] -=1
+        #print 'location', pos,'has been updated to',sdm_values[pos,]
 
 
 '''
 
-def write_x_at_x(active_hard_locations , bitstring):
-    for pos in active_hard_locations:
-'''
-
-
-def read_address_sum(active_hard_locations):
+def read_address_sum_kanerva(active_hard_locations):
+    #maximum=255
     sum = numpy.zeros((DIMENSIONS,), dtype = int32)
     for pos in active_hard_locations:
         bitstring = SDM_addresses[pos,]
         for checkbit in range (256):
-            if bool(numpy.bitwise_and((2**checkbit)%maximum, bitstring[  (  (checkbit // maximum) + checkbit % maximum ) // 32  ] ) ): 
+            if bool(bitstring [(  (checkbit // maximum) + checkbit % maximum ) // 32]  &  (1<< checkbit%32  )): 
                 #increase something
                 sum[pos,checkbit]+=1
             else:
@@ -120,7 +135,7 @@ def read_address_sum(active_hard_locations):
     return sum
 
 
-
+'''
 
 
 
@@ -232,6 +247,12 @@ print 'sending memory_addresses from host to compute device...'
 memory_addresses_gpu = cl_array.to_device(queue, SDM_addresses) 
 
 
+print 'creating SDM values'
+start = time.time()
+sdm_values = numpy.zeros((HARD_LOCATIONS, 256), dtype = numpy.int8)
+print (time.time()-start), 'Seconds'
+
+
 distances_host = Get_Hamming_Distances
 
 distances_gpu = Get_Distances_GPU_Buffer(ctx)
@@ -246,12 +267,12 @@ hamming_distances = Get_Hamming_Distances()
 print "\n"
 
 
-num_times = 2000
+num_times = 10
 Results_and_Statistics = numpy.zeros(num_times+1).astype(numpy.uint32) 
 usual_result = 2238155  # for 2000 runs of 2^20 hard locations
 
 '''
-using copy_if_2() yields 2238159!!!
+using copy_if_2() yields 2238159!!!  4 more!!
 ''' 
 
 
@@ -264,9 +285,12 @@ hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
 start = time.time()
 for x in range(num_times):
     
-    bitstring_gpu = Get_Bitstring_GPU_Buffer(ctx)  #Optimize THIS!
+    bitstring = Get_Random_Bitstring()
+    bitstring_gpu = Get_Bitstring_GPU_Buffer(ctx, bitstring)  #Optimize THIS!
     
     count, active_hard_locations, distances = Get_Active_Locations5(ctx) 
+
+    write_x_at_x_kanerva(active_hard_locations,bitstring)
     
     #distances = Get_Active_Locations2(ctx) 
 
@@ -289,12 +313,7 @@ print active_hard_locations.size
 
 sum = numpy.sum(Results_and_Statistics)
 
-print 'creating SDM values'
-start = time.time()
-sdm_values = numpy.zeros((HASH_TABLE_SIZE, DIMENSIONS), dtype = numpy.int8)  #.astype(numpy.int8) 
-print (time.time()-start), 'Seconds'
-
-
+'''
 bitstring = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
 maximum = (2**32)-1
 print maximum
@@ -303,11 +322,11 @@ for checkbit in range (256):
 
     #bool(n&(1<<b))
     
-    n = bitstring [(  (checkbit // maximum) + checkbit % maximum ) // 32]
-    bit = checkbit%32
-    yes1 = bool((n&(1<< checkbit%32  ) ))
+    #n = bitstring [(  (checkbit // maximum) + checkbit % maximum ) // 32]
+    #bit = checkbit%32
+    yes1 = bool((bitstring [(  (checkbit // maximum) + checkbit % maximum ) // 32]&(1<< checkbit%32  ) ))
     #yes2 = bool(bin(numpy.bitwise_and((2**checkbit), bin(bitstring) )))
     print 'bit', checkbit, 'set to', yes1, yes2, 'in uint32 #', (  (checkbit // maximum) + checkbit % maximum ) // 32
 
-
+'''
 
