@@ -22,7 +22,7 @@ print '\ncopy_if():\nresults=',final[:count], '\nfound=', count, '\ntime=', (tim
 
 
 start = time.time()
-final_gpu, evt = my_pyopencl_algorithm.copy_if_2(random_gpu, "ary[i] < 200000", queue = queue)
+final_gpu, evt = my_pyopencl_algorithm.sparse_copy_if(random_gpu, "ary[i] < 200000", queue = queue)
 final = final_gpu.get()
 #count = int(count_gpu.get())
 count = final.size
@@ -46,7 +46,7 @@ print '\ncopy_if() on permuted array:\nresults=',final[:count], '\nfound=', coun
 
 
 start = time.time()
-final_gpu, evt = my_pyopencl_algorithm.copy_if_2(random_gpu, "ary[i] < 200000", queue = queue)
+final_gpu, evt = my_pyopencl_algorithm.sparse_copy_if(random_gpu, "ary[i] < 200000", queue = queue)
 final = final_gpu.get()
 #count = int(count_gpu.get())
 count = final.size
