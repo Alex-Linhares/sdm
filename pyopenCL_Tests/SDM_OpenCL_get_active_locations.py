@@ -197,8 +197,9 @@ import pyopencl.array as cl_array
 
 os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 
-print 'sending memory_addresses to compute device...'
+
 memory_addresses_gpu = cl_array.to_device(queue, Create_Memory_Addresses()) 
+print 'sending memory_addresses to compute device...'
 
 distances_host = Get_Hamming_Distances
 
@@ -256,3 +257,16 @@ print active_hard_locations
 print active_hard_locations.size
 
 sum = numpy.sum(Results_and_Statistics)
+
+
+
+bitstring = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
+maximum = (2**32)-1
+print maximum
+for checkbit in range (256):
+    yes = bool(numpy.bitwise_and((2**checkbit)%maximum, bitstring[  (  (checkbit // maximum) + checkbit % maximum ) // 32  ] ) )
+    #yes = bool(bin(numpy.bitwise_and((2**checkbit), bin(bitstring) )))
+    print 'bit', checkbit, 'set to', yes, 'in uint32', (  (checkbit // maximum) + checkbit % maximum ) // 32
+
+
+
