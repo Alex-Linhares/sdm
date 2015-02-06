@@ -299,9 +299,15 @@ bitstring = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
 maximum = (2**32)-1
 print maximum
 for checkbit in range (256):
-    yes = bool(numpy.bitwise_and((2**checkbit)%maximum, bitstring[  (  (checkbit // maximum) + checkbit % maximum ) // 32  ] ) )
-    #yes = bool(bin(numpy.bitwise_and((2**checkbit), bin(bitstring) )))
-    print 'bit', checkbit, 'set to', yes, 'in uint32', (  (checkbit // maximum) + checkbit % maximum ) // 32
+    yes2 = bool(numpy.bitwise_and((2**checkbit)%maximum, bitstring[  (  (checkbit // maximum) + checkbit % maximum ) // 32  ] ) )
+
+    #bool(n&(1<<b))
+    
+    n = bitstring [(  (checkbit // maximum) + checkbit % maximum ) // 32]
+    bit = checkbit%32
+    yes1 = bool((n&(1<< checkbit%32  ) ))
+    #yes2 = bool(bin(numpy.bitwise_and((2**checkbit), bin(bitstring) )))
+    print 'bit', checkbit, 'set to', yes1, yes2, 'in uint32 #', (  (checkbit // maximum) + checkbit % maximum ) // 32
 
 
 
