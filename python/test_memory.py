@@ -56,6 +56,9 @@ class MemoryTestCase(unittest.TestCase):
             sdm.free()
         m1 = self._memused()
         self.assertTrue(m1 < 40000)
+<<<<<<< HEAD
+>>>>>>> FETCH_HEAD
+=======
 >>>>>>> FETCH_HEAD
 
     def test_mean_distance(self, qty=10):
@@ -66,6 +69,9 @@ class MemoryTestCase(unittest.TestCase):
             arr = array(sdm.thread_distance(a))
 =======
             arr = array(sdm.distance(a))
+<<<<<<< HEAD
+>>>>>>> FETCH_HEAD
+=======
 >>>>>>> FETCH_HEAD
             self.assertTrue(abs(arr.mean()-500) <= 1.5)
         sdm.free()
@@ -123,7 +129,10 @@ class MemoryThreadTestCase(unittest.TestCase):
             self.assertEqual(cnt1, cnt2)
         sdm.free()
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> FETCH_HEAD
 
     def test_writeread1(self, qty=20):
         sdm.initialize()
@@ -151,6 +160,9 @@ class MemoryThreadTestCase(unittest.TestCase):
             b = sdm.thread_read(a)
             self.assertEqual(a.distance_to(b), 0)
         sdm.free()
+<<<<<<< HEAD
+>>>>>>> FETCH_HEAD
+=======
 >>>>>>> FETCH_HEAD
 
 

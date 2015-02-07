@@ -35,9 +35,12 @@ void* sdm_thread_radius_count_task(void* ptr) {
 
 	for(i=0; i<len; i++) {
 <<<<<<< HEAD:src/core/memory_thread.c
+<<<<<<< HEAD:src/core/memory_thread.c
 		dist = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->address);
 		if (dist <= params->radius) {
 =======
+=======
+>>>>>>> FETCH_HEAD:sdm/memory_thread.c
 		dist = bs_distance2(sdm_memory[offset+i]->address, params->address);
 		if (dist <= sdm_radius) {
 			for(j=0; j<bs_dimension; j++) {
@@ -84,7 +87,11 @@ void* sdm_thread_read_task(void* ptr) {
 	for(i=0; i<bs_dimension; i++) params->adder[i] = 0;
 	for(i=0; i<len; i++) {
 <<<<<<< HEAD:src/core/memory_thread.c
+<<<<<<< HEAD:src/core/memory_thread.c
 		dist = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->address);
+=======
+		dist = bs_distance2(sdm_memory[offset+i]->address, params->address);
+>>>>>>> FETCH_HEAD:sdm/memory_thread.c
 =======
 		dist = bs_distance2(sdm_memory[offset+i]->address, params->address);
 >>>>>>> FETCH_HEAD:sdm/memory_thread.c
@@ -189,8 +196,13 @@ void* sdm_thread_radius_count_intersect_task(void* ptr) {
 
 	for(i=0; i<len; i++) {
 <<<<<<< HEAD:src/core/memory_thread.c
+<<<<<<< HEAD:src/core/memory_thread.c
 		d1 = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->addr1);
 		d2 = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->addr2);
+=======
+		d1 = bs_distance2(sdm_memory[offset+i]->address, params->addr1);
+		d2 = bs_distance2(sdm_memory[offset+i]->address, params->addr2);
+>>>>>>> FETCH_HEAD:sdm/memory_thread.c
 =======
 		d1 = bs_distance2(sdm_memory[offset+i]->address, params->addr1);
 		d2 = bs_distance2(sdm_memory[offset+i]->address, params->addr2);
@@ -250,10 +262,13 @@ void* sdm_thread_write_task(void* ptr) {
 
 	for(i=0; i<len; i++) {
 <<<<<<< HEAD:src/core/memory_thread.c
+<<<<<<< HEAD:src/core/memory_thread.c
 		dist = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->address);
 		if (dist <= sdm_radius) {
 			hl_write((adder_t*)&get_sdm_memory_adder(params->sdm, offset+i, 0), params->data);
 =======
+=======
+>>>>>>> FETCH_HEAD:sdm/memory_thread.c
 		dist = bs_distance2(sdm_memory[offset+i]->address, params->address);
 		if (dist <= params->radius) {
 >>>>>>> FETCH_HEAD:sdm/memory_thread.c
@@ -295,7 +310,11 @@ void* sdm_thread_distance_task(void* ptr) {
 
 	for(i=0; i<len; i++) {
 <<<<<<< HEAD:src/core/memory_thread.c
+<<<<<<< HEAD:src/core/memory_thread.c
 		params->res[offset+i] = bs_distance(get_sdm_memory_address(params->sdm, offset+i), params->address);
+=======
+		params->res[offset+i] = bs_distance2(sdm_memory[offset+i]->address, params->address);
+>>>>>>> FETCH_HEAD:sdm/memory_thread.c
 =======
 		params->res[offset+i] = bs_distance2(sdm_memory[offset+i]->address, params->address);
 >>>>>>> FETCH_HEAD:sdm/memory_thread.c

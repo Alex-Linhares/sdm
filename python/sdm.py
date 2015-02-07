@@ -26,6 +26,9 @@ _libsdm.sdm_thread_read.restype = ctypes.POINTER(ctypes.c_void_p)
 _libsdm.sdm_read_chada.restype = ctypes.POINTER(ctypes.c_void_p)
 _libsdm.sdm_thread_read_chada.restype = ctypes.POINTER(ctypes.c_void_p)
 #_libsdm.sdm_thread_read_cubed.restype = ctypes.POINTER(ctypes.c_void_p)
+<<<<<<< HEAD
+>>>>>>> FETCH_HEAD
+=======
 >>>>>>> FETCH_HEAD
 
 _dimension = ctypes.c_int.in_dll(_libsdm, 'bs_dimension')
