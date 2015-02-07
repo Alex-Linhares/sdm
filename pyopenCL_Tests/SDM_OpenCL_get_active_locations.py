@@ -266,7 +266,7 @@ hamming_distances = Get_Hamming_Distances()
 print "\n"
 
 
-num_times = 10
+num_times = 2000
 Results_and_Statistics = numpy.zeros(num_times+1).astype(numpy.uint32) 
 usual_result = 2238155  # for 2000 runs of 2^20 hard locations
 
@@ -289,7 +289,7 @@ for x in range(num_times):
     
     count, active_hard_locations, distances = Get_Active_Locations5(ctx) 
 
-    write_x_at_x_kanerva(active_hard_locations,bitstring)
+    #write_x_at_x_kanerva(active_hard_locations,bitstring)
     
     #distances = Get_Active_Locations2(ctx) 
 
