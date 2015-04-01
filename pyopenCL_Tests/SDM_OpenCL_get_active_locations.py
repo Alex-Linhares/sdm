@@ -258,7 +258,7 @@ distances_host = Get_Hamming_Distances
 distances_gpu = Get_Distances_GPU_Buffer(ctx)
 
 
-prg = cl.Program(ctx, OpenCL_code).build()
+prg = cl.Program(ctx, OpenCL_code).build().wait()
 
 hash_table_active_index = Get_Hash_Table()
 hamming_distances = Get_Hamming_Distances()
