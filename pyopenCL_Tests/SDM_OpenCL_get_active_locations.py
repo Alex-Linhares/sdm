@@ -37,6 +37,13 @@ ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 mem_flags = cl.mem_flags
 
+def random_int64(size):
+    a0 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
+    a1 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
+    a2 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
+    a3 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
+    a = a0 + (a1<<16) + (a2 << 32) + (a3 << 48)
+    return a.view(dtype=numpy.uint64)
 
 def Get_Hash_Table():
     hash_table_active_index = numpy.zeros(HASH_TABLE_SIZE).astype(numpy.int32) 
@@ -57,7 +64,7 @@ def Get_Distances_GPU_Buffer(ctx):
     return hamming_distances_gpu
 
 def Get_Random_Bitstring():
-    bitstrings = numpy.random.random_integers(-2**15+1,2**15-1,size=8).astype(numpy.uint32) #TRYING THIS OUT
+    bitstrings = numpy.random.random_integers(0,maximum,size=8).astype(numpy.uint32) #TRYING THIS OUT
     return bitstrings
 
 
@@ -85,7 +92,7 @@ def Get_num_times_Bitstrings_GPU_Buffer(ctx):
 
 def Create_Memory_Addresses():
     print 'creating memory memory_addresses...'
-    memory_addresses = memory_addresses = numpy.random.random_integers(-2**15+1,2**15-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32) #numpy.random.random_integers(0,(2**32)-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
+    memory_addresses = memory_addresses = numpy.random.random_integers(0,maximum,size=(HARD_LOCATIONS,8)).astype(numpy.uint32) #numpy.random.random_integers(0,(2**32)-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
     return memory_addresses
 
     #The mistake here is that numpy is working with ints, and we're working with uints, so we have to have the **int** range, then cast to uint---not the uint range.  Yes, we are morons.  
@@ -98,8 +105,6 @@ def Get_Text_code(filename):
 
 def create_sdm_values():
     return numpy.zeros((HARD_LOCATIONS, DIMENSIONS), dtype = numpy.int8) 
-
-
 
 
 def write_x_at_x_kanerva(active_hard_locations, bitstring):
@@ -120,7 +125,6 @@ def write_x_at_x_kanerva(active_hard_locations, bitstring):
 
 
 '''
-
 def read_address_sum_kanerva(active_hard_locations):
     #maximum=255
     sum = numpy.zeros((DIMENSIONS,), dtype = int32)
@@ -134,8 +138,6 @@ def read_address_sum_kanerva(active_hard_locations):
                 #decrease something
                 sum[pos,checkbit]-=1
     return sum
-
-
 '''
 
 
@@ -211,8 +213,8 @@ def Get_Active_Locations4(bitstring, ctx):
 
 
 def Get_Active_Locations5( ctx):
-    #hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
-    prg.clear_hash_table_gpu(queue, hash_table_gpu).wait()
+    hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
+    #prg.clear_hash_table_gpu(queue, hash_table_gpu.data)
 
     prg.get_active_hard_locations_32bit(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
     

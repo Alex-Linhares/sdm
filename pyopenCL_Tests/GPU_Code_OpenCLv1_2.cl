@@ -1,9 +1,42 @@
-// FROM https://devtalk.nvidia.com/default/topic/524601/opencl-linux-header-files-opencl-status/
+/* FROM https://devtalk.nvidia.com/default/topic/524601/opencl-linux-header-files-opencl-status/
+SEE ALSO: 
+
+http://devgurus.amd.com/thread/160474
+http://docs.nvidia.com/cuda/inline-ptx-assembly/index.html#axzz3WS8tpXJK
+https://github.com/marwan-abdellah/GPU-Computing-SDK-4.2.9/tree/master/OpenCL/src/oclInlinePTX
+
 inline uint nvidia_popcount(const uint i) {
   uint n;
   asm("popc.b32 %0, %1;" : "=r"(n) : "r" (i));
   return n;
 }
+*/
+
+
+/*
+   * Hacker's Delight 32 bit pop function:
+   * http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.c.txt
+   * 
+   * int pop(unsigned x) {
+   * x = x - ((x >> 1) & 0x55555555);
+   * x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+   * x = (x + (x >> 4)) & 0x0F0F0F0F;
+   * x = x + (x >> 8);
+   * x = x + (x >> 16);
+   * return x & 0x0000003F;
+   * }
+   * *
+   */
+
+  /* 64 bit java version of the C function from above
+  x = x - (x >>> 1 & 0x5555555555555555L);
+  x = (x & 0x3333333333333333L) + (x >>> 2 & 0x3333333333333333L);
+  x = x + (x >>> 4) & 0x0F0F0F0F0F0F0F0FL;
+  x = x + (x >>> 8);
+  x = x + (x >>> 16);
+  x = x + (x >>> 32);
+  return (int) x & 0x7F;
+*/ 
 
 
 
