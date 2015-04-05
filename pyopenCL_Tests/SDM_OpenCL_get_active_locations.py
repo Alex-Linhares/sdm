@@ -57,7 +57,7 @@ def Get_Distances_GPU_Buffer(ctx):
     return hamming_distances_gpu
 
 def Get_Random_Bitstring():
-    bitstrings = numpy.random.random_integers(0,2**32,size=8).astype(numpy.uint32)
+    bitstrings = numpy.random.random_integers(-2**15+1,2**15-1,size=8).astype(numpy.uint32) #TRYING THIS OUT
     return bitstrings
 
 
@@ -85,9 +85,11 @@ def Get_num_times_Bitstrings_GPU_Buffer(ctx):
 
 def Create_Memory_Addresses():
     print 'creating memory memory_addresses...'
-    memory_addresses = numpy.random.random_integers(0,2**32,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
+    memory_addresses = memory_addresses = numpy.random.random_integers(-2**15+1,2**15-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32) #numpy.random.random_integers(0,(2**32)-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
     return memory_addresses
 
+    #The mistake here is that numpy is working with ints, and we're working with uints, so we have to have the **int** range, then cast to uint---not the uint range.  Yes, we are morons.  
+    #memory_addresses = numpy.random.random_integers(-2**15+1,2**15-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
 
 def Get_Text_code(filename):
     with open (filename, "r") as myfile:
@@ -95,7 +97,7 @@ def Get_Text_code(filename):
         return HASH_TABLE_SIZE_FILE + data 
 
 def create_sdm_values():
-    return numpy.zeros((HARD_LOCATIONS, DIMENSIONS), dtype = numpy.int8)
+    return numpy.zeros((HARD_LOCATIONS, DIMENSIONS), dtype = numpy.int8) 
 
 
 
@@ -103,7 +105,7 @@ def create_sdm_values():
 def write_x_at_x_kanerva(active_hard_locations, bitstring):
     maximum=255 #isn't it 255?
     for pos in numpy.nditer(active_hard_locations):
-        bitstring = SDM_addresses[pos,0:8]
+        bitstring = SDM_addresses[pos,0:8] #WHAT THE FUCK IS THIS? JUST RECEIVED AS PARAMETER!
         
         for dimension in range (256):
             uint_to_check_bit = ((dimension // maximum) + dimension % maximum ) // 32
@@ -209,8 +211,9 @@ def Get_Active_Locations4(bitstring, ctx):
 
 
 def Get_Active_Locations5( ctx):
-    hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
- 
+    #hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
+    prg.clear_hash_table_gpu(queue, hash_table_gpu).wait()
+
     prg.get_active_hard_locations_32bit(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
     
     active_hard_locations_gpu, event = my_pyopencl_algorithm.sparse_copy_if(hash_table_gpu, "ary[i] > 0", queue = queue)  
@@ -246,19 +249,20 @@ print 'sending memory_addresses from host to compute device...'
 memory_addresses_gpu = cl_array.to_device(queue, SDM_addresses) 
 
 
+'''
 print 'creating SDM values'
 start = time.time()
 sdm_values = numpy.zeros((HARD_LOCATIONS, 256), dtype = numpy.int8)
 cl_array.to_device(queue, sdm_values) 
 print (time.time()-start), 'Seconds'
-
+'''
 
 distances_host = Get_Hamming_Distances
 
 distances_gpu = Get_Distances_GPU_Buffer(ctx)
 
 
-prg = cl.Program(ctx, OpenCL_code).build().wait()
+prg = cl.Program(ctx, OpenCL_code).build()
 
 hash_table_active_index = Get_Hash_Table()
 hamming_distances = Get_Hamming_Distances()

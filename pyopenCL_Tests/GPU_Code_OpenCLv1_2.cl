@@ -1,3 +1,9 @@
+// FROM https://devtalk.nvidia.com/default/topic/524601/opencl-linux-header-files-opencl-status/
+inline uint nvidia_popcount(const uint i) {
+  uint n;
+  asm("popc.b32 %0, %1;" : "=r"(n) : "r" (i));
+  return n;
+}
 
 
 
@@ -37,11 +43,11 @@ Speed test:  if we can send/receive only the active HLs, instead of the entire h
 #define ACCESS_RADIUS_THRESHOLD 104
 
 
-__kernel void get_active_hard_locations(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances, __global int *bin_active_index)
+__kernel void get_active_hard_locations(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances, __global int *hash_table_gpu)
 {
   __private int mem_pos;
   __private ulong4 Aux;
-  __private int bin_pos;
+  __private int hash_index;
         
   mem_pos = get_global_id(0);
 
@@ -52,35 +58,35 @@ __kernel void get_active_hard_locations(__global ulong4 *HL_address, __global ul
 
   if (distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
   {                                                 
-    bin_pos = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
-    if (bin_active_index[bin_pos]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
-      bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
-      if (bin_active_index[bin_pos]>0) {
-        bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
-        if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
-          if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
-          if (bin_active_index[bin_pos]>0) {
-            bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
-            if (bin_active_index[bin_pos]>0) {
-              bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
+    hash_index = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
+    if (hash_table_gpu[hash_index]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
+      hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
+      if (hash_table_gpu[hash_index]>0) {
+        hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
+        if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
+          if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
+          if (hash_table_gpu[hash_index]>0) {
+            hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
+            if (hash_table_gpu[hash_index]>0) {
+              hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
               }
             }
           }
         }
       }  
     }
-    bin_active_index[bin_pos]=mem_pos;
-    distances[bin_pos]=distances[mem_pos];
+    hash_table_gpu[hash_index]=mem_pos;
+    distances[hash_index]=distances[mem_pos];
   }
 }
 
-__kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __global uint8 *bitstring, __global int *distances, __global int *bin_active_index)
+__kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __global uint8 *bitstring, __global int *distances, __global int *hash_table_gpu)
 {
   __private int mem_pos;
   __private uint8 Aux;
-  __private int bin_pos;
+  __private int hash_index;
         
   mem_pos = get_global_id(0);
 
@@ -91,27 +97,27 @@ __kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __glob
 
   if (distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
   {                                                 
-    bin_pos = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
-    if (bin_active_index[bin_pos]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
-      bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
-      if (bin_active_index[bin_pos]>0) {
-        bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
-        if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
-          if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
-          if (bin_active_index[bin_pos]>0) {
-            bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
-            if (bin_active_index[bin_pos]>0) {
-              bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
+    hash_index = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
+    if (hash_table_gpu[hash_index]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
+      hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
+      if (hash_table_gpu[hash_index]>0) {
+        hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
+        if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
+          if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
+          if (hash_table_gpu[hash_index]>0) {
+            hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
+            if (hash_table_gpu[hash_index]>0) {
+              hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
               }
             }
           }
         }
       }  
     }
-    bin_active_index[bin_pos]=mem_pos;
-    distances[bin_pos]=distances[mem_pos];
+    hash_table_gpu[hash_index]=mem_pos;
+    distances[hash_index]=distances[mem_pos];
   }
 }
 
@@ -150,11 +156,11 @@ __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bi
 }
 
 //COULD this be faster with no distances buffer?
-__kernel void get_active_hard_locations_no_dist_buffer(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *bin_active_index)
+__kernel void get_active_hard_locations_no_dist_buffer(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *hash_table_gpu)
 {
   __private int mem_pos;
   __private ulong4 Aux;
-  __private uint bin_pos;
+  __private uint hash_index;
   __private uint distance;
         
   mem_pos = get_global_id(0);
@@ -165,34 +171,32 @@ __kernel void get_active_hard_locations_no_dist_buffer(__global ulong4 *HL_addre
 
   if (distance<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
   {                                                 
-    bin_pos = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
-    if (bin_active_index[bin_pos]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
-      bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
-      if (bin_active_index[bin_pos]>0) {
-        bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
-        if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
-          if (bin_active_index[bin_pos]>0) {
-          bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
-            if (bin_active_index[bin_pos]>0) {
-              bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
-              if (bin_active_index[bin_pos]>0) {
-                bin_pos= (bin_pos + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
+    hash_index = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
+    if (hash_table_gpu[hash_index]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
+      hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE2)) % HASH_TABLE_SIZE;
+      if (hash_table_gpu[hash_index]>0) {
+        hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE3)) % HASH_TABLE_SIZE;
+        if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
+          if (hash_table_gpu[hash_index]>0) {
+          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
+            if (hash_table_gpu[hash_index]>0) {
+              hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
+              if (hash_table_gpu[hash_index]>0) {
+                hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
               }
             }
           }
         }
       }  
     }
-    bin_active_index[bin_pos]=mem_pos;
+    hash_table_gpu[hash_index]=mem_pos;
   }
 }
 
-/*
-__kernel void clear_hash_table_gpu(__global uint *hash_table_gpu) 
+
+__kernel void clear_hash_table_gpu(__global int *hash_table_gpu) 
 {
-  __private uint gid;
-  gid = get_global_id(0);
-  hash_table_gpu[gid]=0;
+  hash_table_gpu[get_global_id(0)]=0; 
 }
-*/
+
