@@ -1,18 +1,14 @@
 import hashlib
 import numpy
 
-MEM_SIZE = 200
+hash_string = hashlib.sha256(str('foo')).hexdigest()
+bitstring = numpy.zeros(8,dtype = numpy.uint32)
+for x in range (8): 
+    hash_substring = '0x'+hash_string[x*8:x*8+8]
 
-'''
-loop through the hard locations
-'''
-
-#a = numpy.zeros((MEM_SIZE,), dtype = numpy.uint32)
-a = []
-
-for x in range (MEM_SIZE): 
-	a.append( hashlib.sha256(str(x)).digest()) 
-	print x, a[x]
+    #struct.unpack('f',"ED6F3C01".decode('hex'))
+    bitstring [x] = int(hash_substring, 16) & 0xFFFFFFFF
+    print hash_substring, bitstring[x], hex(bitstring[x])
 
 
 
