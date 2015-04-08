@@ -67,8 +67,11 @@ def Get_Distances_GPU_Buffer(ctx):
     return hamming_distances_gpu
 
 def Get_Random_Bitstring():
-    bitstrings = numpy.random.random_integers(0,maximum,size=8).astype(numpy.uint32) #TRYING THIS OUT
-    return bitstrings
+    #bitstrings = numpy.random.random_integers(0,maximum,size=8).astype(numpy.uint32) #TRYING THIS OUT
+    import address_space_through_sha256_SDM
+    import random
+    bitstring = address_space_through_sha256_SDM.get_bitstring(str(random.randrange(2**32-1)))
+    return bitstring
 
 
 def Get_Bitstring_GPU_Buffer(ctx, bitstring):
@@ -175,7 +178,7 @@ from my_pyopencl_algorithm import copy_if
 def Get_Active_Locations2(ctx):
     prg.compute_distances(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data).wait()  
     
-    final_gpu, evt = my_pyopencl_algorithm.copy_if_2(distances_gpu, "ary[i] < 104", queue = queue)
+    final_gpu, evt = my_pyopencl_algorithm.sparse_copy_if(distances_gpu, "ary[i] < 104", queue = queue)
 
     return final_gpu
 
@@ -308,12 +311,13 @@ for x in range(num_times):
     bitstring_gpu = Get_Bitstring_GPU_Buffer(ctx, bitstring)  #Optimize THIS!
     
     count, active_hard_locations, distances = Get_Active_Locations5(ctx) 
-
+    #active_hard_locations = Get_Active_Locations2(ctx)
+    
     #write_x_at_x_kanerva(active_hard_locations,bitstring)
     
     #distances = Get_Active_Locations2(ctx) 
 
-    Results_and_Statistics[x] = count
+    Results_and_Statistics[x] = active_hard_locations.size
     #Results_and_Statistics[x] = distances.size
     
 time_elapsed = (time.time()-start)

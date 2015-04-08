@@ -26,7 +26,7 @@ def create_address_space_pickle(HARD_LOCATIONS):
     address_space = get_address_space(HARD_LOCATIONS)
     import cPickle
     out = open('hard_locations.sha256.sdm.pickle', 'wb')
-    cPickle.dump (address_space, out)
+    cPickle.dump (address_space, out, cPickle.HIGHEST_PROTOCOL)
     out.close()
 
 
