@@ -30,19 +30,5 @@ def create_address_space_pickle(HARD_LOCATIONS):
     out.close()
 
 
-
-create_address_space_pickle(2**20)
-
-
-
-'''
-Ok, running into a problem, 256bits from sha256 won't fit...  come back to this later on...
-
-have to convert the 256 bits into different indexes of a[x]
-
-
-finally, save sha256.SDM.addresses.pickle
-
-'''
-
-
+# To recreate the address_space, uncomment the line below
+#create_address_space_pickle(2**20)
