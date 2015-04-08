@@ -37,6 +37,7 @@ ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 mem_flags = cl.mem_flags
 
+'''
 def random_int64(size):
     a0 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
     a1 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
@@ -44,6 +45,8 @@ def random_int64(size):
     a3 = numpy.random.random_integers(0, 0xFFFF, size=size).astype(numpy.uint64)
     a = a0 + (a1<<16) + (a2 << 32) + (a3 << 48)
     return a.view(dtype=numpy.uint64)
+'''
+
 
 def Get_Hash_Table():
     hash_table_active_index = numpy.zeros(HASH_TABLE_SIZE).astype(numpy.int32) 
@@ -92,11 +95,17 @@ def Get_num_times_Bitstrings_GPU_Buffer(ctx):
 
 def Create_Memory_Addresses():
     print 'creating memory memory_addresses...'
-    memory_addresses = memory_addresses = numpy.random.random_integers(0,maximum,size=(HARD_LOCATIONS,8)).astype(numpy.uint32) #numpy.random.random_integers(0,(2**32)-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
+    memory_addresses = numpy.random.random_integers(0,maximum,size=(HARD_LOCATIONS,8)).astype(numpy.uint32) #numpy.random.random_integers(0,(2**32)-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
     return memory_addresses
 
     #The mistake here is that numpy is working with ints, and we're working with uints, so we have to have the **int** range, then cast to uint---not the uint range.  Yes, we are morons.  
     #memory_addresses = numpy.random.random_integers(-2**15+1,2**15-1,size=(HARD_LOCATIONS,8)).astype(numpy.uint32)
+
+def load_address_space():
+    import cPickle
+    address_space_file = open('hard_locations.sha256.sdm.pickle', 'rb')
+    space = cPickle.load(address_space_file)
+    return space
 
 def Get_Text_code(filename):
     with open (filename, "r") as myfile:
@@ -245,7 +254,11 @@ import pyopencl.array as cl_array
 
 os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 
-SDM_addresses = Create_Memory_Addresses()
+#SDM_addresses = Create_Memory_Addresses()
+SDM_addresses = load_address_space()
+print SDM_addresses[0,0]
+
+
 
 print 'sending memory_addresses from host to compute device...'
 memory_addresses_gpu = cl_array.to_device(queue, SDM_addresses) 
