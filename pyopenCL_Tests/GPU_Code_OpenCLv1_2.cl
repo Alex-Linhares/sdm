@@ -73,6 +73,61 @@ Speed test:  if we can send/receive only the active HLs, instead of the entire h
 
 // HASH_TABLE_SIZE must be prime.  The higher it is, the more bandwidth, but less collisions.  It should also be "far" from a power of 2. 
 
+/* BROGLIATO's CODE for reading & writing
+
+bs_len = dimensions = 256
+
+inline int is_bit_true_64(bitstring* a, int bit) {
+  int i = bit/64, j = bit%64;
+  return (a[bs_len-1-i]&((uint64_t)1<<j) ? 1 : 0);
+}
+
+inline int is_bit_true_32(bitstring* a, int bit) {
+  int i = bit/32, j = bit%32;
+  return (a[bs_len-1-i]&((uint32_t)1<<j) ? 1 : 0);
+}
+
+
+int bs_bitsign(bitstring* a, int bit) {
+  return (bs_bit(a, bit) ? 1 : -1);
+}
+
+
+
+void hl_write(hardlocation* hl, bitstring* data) {
+  int i, a;
+  for(i=0; i<bs_dimension; i++) 
+
+
+  //This is the code of the write kernel
+  {
+    a = bs_bitsign(data, i);
+    if (a > 0) {
+      if (hl->adder[i] < 127) hl->adder[i]++;
+      else printf("@@ WARNING WARNING!\n");
+    } else if (a < 0) {
+      if (hl->adder[i] > -127) hl->adder[i]--;
+      else printf("@@ WARNING WARNING!\n");
+    }
+  }
+
+
+
+
+}
+
+bitstring* hl_read(hardlocation* hl) {
+  return bs_init_adder(bs_alloc(), hl->adder);
+}
+
+
+
+
+*/ 
+
+
+
+
 #define ACCESS_RADIUS_THRESHOLD 104
 
 

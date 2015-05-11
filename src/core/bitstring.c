@@ -142,13 +142,11 @@ unsigned int bs_distance(bitstring* a, bitstring* b) {
 	return dist;
 }
 
-<<<<<<< HEAD:src/core/bitstring.c
-<<<<<<< HEAD:src/core/bitstring.c
+
 // TODO Make it an inline function. [msbrogli 2014-02-01]
 int bs_bit(bitstring* a, int bit) {
-=======
-=======
->>>>>>> FETCH_HEAD:sdm/bitstring.c
+
+
 inline unsigned int bs_distance2(bitstring* a, bitstring* b) {
 	register unsigned int i;
 	unsigned int dist;
@@ -164,7 +162,6 @@ inline unsigned int bs_distance2(bitstring* a, bitstring* b) {
 
 
 inline int bs_bit(bitstring* a, int bit) {
->>>>>>> FETCH_HEAD:sdm/bitstring.c
 	int i = bit/64, j = bit%64;
 	return (a[bs_len-1-i]&((uint64_t)1<<j) ? 1 : 0);
 }
