@@ -298,6 +298,30 @@ using copy_if_2() yields 2238159!!!  4 more!!
 ''' 
 
 
+for platform in cl.get_platforms():
+    for device in platform.get_devices():
+        print("===============================================================")
+        print("Platform name:", platform.name)
+        print("Platform profile:", platform.profile)
+        print("Platform vendor:", platform.vendor)
+        print("Platform version:", platform.version)
+        print("---------------------------------------------------------------")
+        print("Device name:", device.name)
+        print("Device type:", cl.device_type.to_string(device.type))
+        print("Device memory: ", device.global_mem_size//1024//1024//1024, 'GB')
+        print("Device max clock speed:", device.max_clock_frequency, 'MHz')
+        print("Device compute units:", device.max_compute_units)
+ 
+
+
+for platform in cl.get_platforms():
+    for device in platform.get_devices():
+        Platform_name = platform.name
+        Device_name = device.name + ' on platform ' + platform.name
+        print Device_name
+
+
+
 print '\n\n===================================================='
 
 distances_gpu = pyopencl.array.arange(queue, HARD_LOCATIONS, dtype=numpy.int32)
