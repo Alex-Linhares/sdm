@@ -210,14 +210,46 @@ Implementation
 \begin_layout Standard
 Our implementation, though just a version 1.0, follows the industrial-strength
  design of GNU, Linux, and Git, by breaking the system's components into
- chunks (qual é a palavra correta?).
- Each chunk (?) has a fixed, stable, APIs, enable that its internal computations
- can be changed, as technology evolves, without affecting other chunks(modules)
- that may depend on it.
+ toolkits.
+ Each toll of the toolkit has a fixed, stable, APIs, which enables changes
+ whithin its internal computations, as technology evolves, without affecting
+ other tools that may depend on it.
  This also enables flexibility in the design of related architectures, such
  as HRRs (full numbre of HRRs here) + citations.
  Our performance comparisons run through a gamut of different architectures
  (CPUs and GPUs), and operating systems (OSX, Linux, and Microsoft Windows).
+ Each tool can also be implemented in a varied number of more efficient
+ forms in the future (e.g., FPGAs, or ASICs), without affecting other tools.
+ 
+\end_layout
+
+\begin_layout Standard
+Our toolkit consists of 5 tools:
+\end_layout
+
+\begin_layout Enumerate
+Creating an address space and the associated hard location values;
+\end_layout
+
+\begin_layout Enumerate
+Given a bitstring, scanning the hard location addresses and activating the
+ proper hard locations 
+\end_layout
+
+\begin_layout Enumerate
+A variation of the above procedure also returns the 
+\emph on
+distance 
+\emph default
+between the bitstring to the addresses
+\end_layout
+
+\begin_layout Enumerate
+Writing to the memory
+\end_layout
+
+\begin_layout Enumerate
+Reading from the memory
 \end_layout
 
 \begin_layout Subsection
