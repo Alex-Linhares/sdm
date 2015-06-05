@@ -14,7 +14,6 @@ inline uint nvidia_popcount(const uint i) {
 
 
 /*
-<<<<<<< Updated upstream
    * Hacker's Delight 32 bit pop function:
    * http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.c.txt
    * 
@@ -50,8 +49,6 @@ Speed test:  if we can send/receive only the active HLs, instead of the entire h
 */
 
 /*
-=======
->>>>>>> Stashed changes
 #define HASH_TABLE_SIZE 48781
 #define HASH_TABLE_SIZE2 48780
 #define HASH_TABLE_SIZE3 48779
