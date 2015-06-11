@@ -69,6 +69,10 @@ A massively parallel, cross-platform, open source, implementation of Sparse
 Marcelo Salhab Brogliato; Alexandre Linhares
 \end_layout
 
+\begin_layout Right Address
+FGV/EBAPE
+\end_layout
+
 \begin_layout Standard
 blah blahblah blahblah blahblah blahblah blahblah blahblah blahblah blahblah
  blahblah blahblah blahblah blahblah blahblah blahblah blahblah blahblah
@@ -288,12 +292,13 @@ For researchers to share results, we propose that an universal set of hard
 
 \begin_layout Standard
 Because this is a once-per-run initialization operation, we simply pack
- the memory addresses into the file ''.
+ the memory addresses into the file ``hard_locations.sha256.sdm.pickle'', which
+ can then be read at the start of execution.
  
 \end_layout
 
 \begin_layout Subsection
-Scanning the Hard Location address space
+Scanning the Hard Location address space (without retrieving distances)
 \end_layout
 
 \begin_layout Standard
@@ -308,13 +313,22 @@ Given a bitstring, how can we find out which hard locations are activated
  hard locations, and this is bit by bit comparison, such that in our 256-dimensi
 onal space we have---for each single scan---268,435,456 bit-compares involved.
  This is a daunting task when one has few processors, yet is an easy task
- when all the numbers of hard locations equals the number of neurons (as
- proposed by the model).
+ when all the numbers of hard locations equals the number of neurons---as
+ proposed by the model.
  
 \end_layout
 
 \begin_layout Standard
 Here we turn to the question on how to implement this in OpenCL efficiently.
+ The key problem here is that one does not know, 
+\emph on
+a priori
+\emph default
+, how many hard locations will be activated by bistring 
+\emph on
+b
+\emph default
+.
  Unlike high-level programming languages, OpenCL does not provide size-adjustabl
 e lists as a run evolves.
  It does, instead, work on contiguous blocks of memory (arrays) and distributes
@@ -351,6 +365,28 @@ Here we propose two solutions: one scan with no loss, and a second that
  (generally less than 1% hard location loss, and this loss is configurable
  through a time tradeoff).
  
+\end_layout
+
+\begin_layout Itemize
+Scan with no loss: This procedure will use 
+\end_layout
+
+\begin_layout Itemize
+Scan with (small) loss: This procedure will scan the address space and temporari
+ly save the active hard location indexes into a hash table 
+\begin_inset Formula $H\ll2^{20}$
+\end_inset
+
+.
+ After the entire scan is complete, it will select non-zero indexes within
+ the hash table, and finally proceed with the aforementioned scan procedure
+ on the hash table.
+ Obviously, due to potential hash collisions, some hard locations may be
+ lost.
+ Hence, as the size of the hash table increases, running time increases,
+ but lower and lower hash collisions are found.
+ Finally, because one does not need to transfer the entire hash table between
+ devices, but only the set of active locations, transfer time is minimized.
 \end_layout
 
 \begin_layout Subsubsection
