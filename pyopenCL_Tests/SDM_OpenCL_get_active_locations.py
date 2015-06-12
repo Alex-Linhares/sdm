@@ -21,6 +21,49 @@ HASH_TABLE_SIZE_FILE = \
 #define HASH_TABLE_SIZE7 25027 \n\
 "
 
+HASH_TABLE_SIZE =  46273 
+HASH_TABLE_SIZE_FILE = \
+"#define HASH_TABLE_SIZE 46273 \n\
+#define HASH_TABLE_SIZE2 46272 \n\
+#define HASH_TABLE_SIZE3 46271 \n\
+#define HASH_TABLE_SIZE4 46270 \n\
+#define HASH_TABLE_SIZE5 46269 \n\
+#define HASH_TABLE_SIZE6 46268 \n\
+#define HASH_TABLE_SIZE7 46267 \n\
+"
+
+HASH_TABLE_SIZE =  75707 
+HASH_TABLE_SIZE_FILE = \
+"#define HASH_TABLE_SIZE 75707 \n\
+#define HASH_TABLE_SIZE2 75706 \n\
+#define HASH_TABLE_SIZE3 75705 \n\
+#define HASH_TABLE_SIZE4 75704 \n\
+#define HASH_TABLE_SIZE5 75703 \n\
+#define HASH_TABLE_SIZE6 75702 \n\
+#define HASH_TABLE_SIZE7 75701 \n\
+"
+
+HASH_TABLE_SIZE =  149911 
+HASH_TABLE_SIZE_FILE = \
+"#define HASH_TABLE_SIZE 149911 \n\
+#define HASH_TABLE_SIZE2 149910 \n\
+#define HASH_TABLE_SIZE3 149909 \n\
+#define HASH_TABLE_SIZE4 149908 \n\
+#define HASH_TABLE_SIZE5 149907 \n\
+#define HASH_TABLE_SIZE6 149906 \n\
+#define HASH_TABLE_SIZE7 149905 \n\
+"
+
+HASH_TABLE_SIZE =  65449 
+HASH_TABLE_SIZE_FILE = \
+"#define HASH_TABLE_SIZE 65449 \n\
+#define HASH_TABLE_SIZE2 65448 \n\
+#define HASH_TABLE_SIZE3 65447 \n\
+#define HASH_TABLE_SIZE4 65446 \n\
+#define HASH_TABLE_SIZE5 65445 \n\
+#define HASH_TABLE_SIZE6 65444 \n\
+#define HASH_TABLE_SIZE7 65443 \n\
+"
 
 # HASH_TABLE_SIZE must be prime.  The higher it is, the more bandwidth, but way less collisions.  It should also be "far" from a power of 2.
 
@@ -228,7 +271,7 @@ def Get_Active_Locations5( ctx):
     hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
     #prg.clear_hash_table_gpu(queue, hash_table_gpu.data)
 
-    prg.get_active_hard_locations_32bit(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
+    prg.get_active_hard_locations_32bit_no_if(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
     
     active_hard_locations_gpu, event = my_pyopencl_algorithm.sparse_copy_if(hash_table_gpu, "ary[i] > 0", queue = queue)  
     #active_hard_locations_gpu, final_distances_gpu, event = my_pyopencl_algorithm.sparse_copy_if_with_distances(hash_table_gpu, "ary[i] > 0", extra_args = [distances_gpu], queue = queue)  
@@ -289,7 +332,7 @@ hamming_distances = Get_Hamming_Distances()
 print "\n"
 
 
-num_times = 2000
+num_times = 20000
 Results_and_Statistics = numpy.zeros(num_times+1).astype(numpy.uint32) 
 usual_result = 2238155  # for 2000 runs of 2^20 hard locations
 
