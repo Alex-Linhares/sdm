@@ -213,48 +213,64 @@ __kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __glob
 }
 
 
+
+
+
+
+
+
 /*
 The next function has no branches, except for the threshold if (can it be taken off?)
 Look st what this guy did here, can we do the same for three possible hash positions?
 result = (30 &a_bigger) | (35 & b_bigger) | (40 & equal);
+OR YOU CAN AS WELL:
+b_bigger = a>b;
+b_bigger --;
+equal = ~(a_bigger |b_bigger); 
 from : https://www.khronos.org/message_boards/showthread.php/8562-Do-i-have-divergence-with-(bool)-val1-val2-operator?p=27979&viewfull=1#post27979
 */
-__kernel void get_active_hard_locations_32bit_no_if(__global uint8 *HL_address, __global uint8 *bitstring, __global int *distances, __global int *hash_table_gpu)
+__kernel void get_active_hard_locations_32bit_no_if(__global uint8 *HL_address, __global uint8 *bitstring, __global uint *distances, __global uint *hash_table_gpu)
 {
   __private uint mem_pos;
-  __private uint8 Aux;
+  __local uint8 Aux;
   __private uint hash_index;
-  //__local uint h_table_gpu = 
+  __local uint distance;
         
   mem_pos = get_global_id(0);
 
   Aux = HL_address[mem_pos] ^ bitstring[0];
   Aux = popcount(Aux);
 
-  distances [mem_pos] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+  //distances [mem_pos] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+  distance = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
 
-  if (distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
+  if (distance<ACCESS_RADIUS_THRESHOLD) //(distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
   {                                                 
     hash_index = ( (mem_pos) ^ hash_table_gpu[(mem_pos) %HASH_TABLE_SIZE]) % HASH_TABLE_SIZE;
     hash_table_gpu[hash_index]=mem_pos;
-    distances[hash_index]=distances[mem_pos];
   }
+  distances[mem_pos]= distance;
 }
+
+
+
+
+
+
+
+
+
 
 __kernel void get_HL_distances_from_gpu(__global int *active_hard_locations_gpu, __global int *distances, __global int *final_distances_gpu)
 {
-  __private int gid;
+  __private uint gid;
   gid = get_global_id(0);  
   final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
 }
 
-
-
-
-
 __kernel void copy_final_results(__global int *final_locations_gpu, __global int *active_hard_locations_gpu, __global int *final_distances_gpu, __global int *hash_table_gpu)
 {
-  __private int gid;
+  __private uint gid;
   gid = get_global_id(0);
   final_locations_gpu [gid] = active_hard_locations_gpu [gid];
   final_distances_gpu [gid] = hash_table_gpu [gid];
@@ -265,7 +281,7 @@ __kernel void copy_final_results(__global int *final_locations_gpu, __global int
 
 __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances)
 {
-  __private int mem_pos;
+  __private uint mem_pos;
   __private ulong4 Aux;
         
   mem_pos = get_global_id(0);
@@ -277,7 +293,7 @@ __kernel void compute_distances(__global ulong4 *HL_address, __global ulong4 *bi
 
 __kernel void compute_distances64(__global ulong4 *HL_address, __global ulong4 *bitstring, __global int *distances)
 {
-  __private int mem_pos;
+  __private uint mem_pos;
   __private ulong4 Aux;
         
   mem_pos = get_global_id(0);
@@ -354,8 +370,12 @@ __kernel void get_active_hard_locations_no_dist_buffer(__global ulong4 *HL_addre
 }
 
 
-__kernel void clear_hash_table_gpu(__global int *hash_table_gpu) 
+__kernel void clear_hash_table_gpu(__global uint *hash_table_gpu, __global uint *distances_gpu) 
 {
-  hash_table_gpu[get_global_id(0)]=0; 
+  __private uint gid; 
+  gid = get_global_id(0);
+  distances_gpu[hash_table_gpu[gid]] = 0;
+  hash_table_gpu[gid]=0; 
+
 }
 

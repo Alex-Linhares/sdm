@@ -15,7 +15,7 @@ print "HASH_TABLE_SIZE=", HASH_TABLE_SIZE  #WHAT IS THE OPTIMUM HASH_TABLE_SIZE?
 ACCESS_RADIUS_THRESHOLD = 104 #COMPUTE EXPECTED NUMBER OF num_ACTIVE_locations_found HARD LOCATIONS
 
 
-import SDM_OpenCL_scan as ocl_scan
+import scan_toolkit as ocl_scan
 
 import os
 import pyopencl.array as cl_array

@@ -10,16 +10,7 @@ HARD_LOCATIONS = 2**20
 DIMENSIONS = 256
 BUFFER_SIZE_EXPECTED_ACTIVE_HARD_LOCATIONS = 1300  #Compute analytically; prove it's safe... 
 maximum = (2**32)-1
-HASH_TABLE_SIZE =  25033 
-HASH_TABLE_SIZE_FILE = \
-"#define HASH_TABLE_SIZE 25033 \n\
-#define HASH_TABLE_SIZE2 25032 \n\
-#define HASH_TABLE_SIZE3 25031 \n\
-#define HASH_TABLE_SIZE4 25030 \n\
-#define HASH_TABLE_SIZE5 25029 \n\
-#define HASH_TABLE_SIZE6 25028 \n\
-#define HASH_TABLE_SIZE7 25027 \n\
-"
+
 
 HASH_TABLE_SIZE =  46273 
 HASH_TABLE_SIZE_FILE = \
@@ -63,6 +54,17 @@ HASH_TABLE_SIZE_FILE = \
 #define HASH_TABLE_SIZE5 65445 \n\
 #define HASH_TABLE_SIZE6 65444 \n\
 #define HASH_TABLE_SIZE7 65443 \n\
+"
+
+HASH_TABLE_SIZE =  25033 
+HASH_TABLE_SIZE_FILE = \
+"#define HASH_TABLE_SIZE 25033 \n\
+#define HASH_TABLE_SIZE2 25032 \n\
+#define HASH_TABLE_SIZE3 25031 \n\
+#define HASH_TABLE_SIZE4 25030 \n\
+#define HASH_TABLE_SIZE5 25029 \n\
+#define HASH_TABLE_SIZE6 25028 \n\
+#define HASH_TABLE_SIZE7 25027 \n\
 "
 
 # HASH_TABLE_SIZE must be prime.  The higher it is, the more bandwidth, but way less collisions.  It should also be "far" from a power of 2.
@@ -269,9 +271,9 @@ def Get_Active_Locations4(bitstring, ctx):
 
 def Get_Active_Locations5( ctx):
     hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
-    #prg.clear_hash_table_gpu(queue, hash_table_gpu.data)
+    #prg.clear_hash_table_gpu(queue, hash_table_gpu.data, distances_gpu.data)
 
-    prg.get_active_hard_locations_32bit_no_if(queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
+    prg.get_active_hard_locations_32bit_no_if (queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
     
     active_hard_locations_gpu, event = my_pyopencl_algorithm.sparse_copy_if(hash_table_gpu, "ary[i] > 0", queue = queue)  
     #active_hard_locations_gpu, final_distances_gpu, event = my_pyopencl_algorithm.sparse_copy_if_with_distances(hash_table_gpu, "ary[i] > 0", extra_args = [distances_gpu], queue = queue)  

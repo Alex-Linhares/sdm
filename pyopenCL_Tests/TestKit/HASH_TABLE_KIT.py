@@ -161,7 +161,7 @@ def test_collisions_shiftleft (PRIME, NUM_HASHES):
 
 
 
-def test_collisions_no_if (PRIME, NUM_HASHES):
+def test_collisions_no_if_with_xor (PRIME, NUM_HASHES):
     HASH_TABLE_SIZE = PRIME
     HASH_TABLE_SIZE2 = PRIME -1
     HASH_TABLE_SIZE3 = PRIME -2
@@ -195,6 +195,41 @@ def test_collisions_no_if (PRIME, NUM_HASHES):
     return numpy.max(collisions)
 
 
+
+def test_collisions_no_if (PRIME, NUM_HASHES):
+    HASH_TABLE_SIZE = PRIME
+    HASH_TABLE_SIZE2 = PRIME -1
+    HASH_TABLE_SIZE3 = PRIME -2
+    HASH_TABLE_SIZE4 = PRIME -3
+    HASH_TABLE_SIZE5 = PRIME -4
+    HASH_TABLE_SIZE6 = PRIME -5
+    HASH_TABLE_SIZE7 = PRIME -6
+    hash_table_gpu = numpy.zeros(HASH_TABLE_SIZE).astype(numpy.uint32)
+    collisions = numpy.zeros(HASH_TABLE_SIZE).astype(numpy.uint32)
+    count = 1
+
+    #print hash_table_gpu
+    #print numpy.sum(hash_table_gpu)
+    for mem_pos in range (0,2**20):
+    	if (random.randint(0, 1000)==253):  #mem_pos % 1000 == 523):
+	        hash_index = ( (mem_pos) ^ hash_table_gpu[(mem_pos) %HASH_TABLE_SIZE]) % HASH_TABLE_SIZE
+	        #hash_index = ( (not hash_table_gpu[(mem_pos)%HASH_TABLE_SIZE] * | hash_table_gpu[ (not mem_pos) %HASH_TABLE_SIZE]) % HASH_TABLE_SIZE 
+
+	        if (hash_table_gpu[hash_index]!=0):
+	        	print 'colision of', mem_pos, 'in hash_index', hash_index, 'mem_pos', mem_pos, 'value', hash_table_gpu[hash_index], 'xor', mem_pos ^ hash_table_gpu[mem_pos %HASH_TABLE_SIZE], 'alt-pos', ( (mem_pos) ^ hash_table_gpu[(mem_pos) %HASH_TABLE_SIZE]) % HASH_TABLE_SIZE
+	        	collisions[hash_index]+=1
+
+	        hash_table_gpu[ hash_index ] = mem_pos # note: instead of mod 2**N, using faster & (2**N-1) here
+	        
+
+	numpy.set_printoptions(threshold= 400) #numpy.nan)
+    #print hash_table_gpu
+    #print 'hash_table_gpu sum', numpy.sum(hash_table_gpu)
+    numpy.set_printoptions(threshold= numpy.nan)
+    #print collisions
+    #print 'collisions sum', numpy.max(collisions)
+    return numpy.max(collisions)
+
 # test_collisions results ---
 
 
@@ -207,7 +242,7 @@ numtimes = 100
 start = time.time()
 collisions_max = numpy.zeros(numtimes).astype(numpy.uint32)
 for t in range (numtimes):
-    collisions_max [t]= test_collisions_no_if (p, iterations)  
+    collisions_max [t]= test_collisions_no_if_with_xor (p, iterations)  
 exec_time = time.time() - start
 print exec_time, 'seconds for' , numtimes, 'runs' 
 print collisions_max
