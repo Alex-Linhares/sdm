@@ -112,10 +112,10 @@ def Get_Distances_GPU_Buffer(ctx):
     return hamming_distances_gpu
 
 def Get_Random_Bitstring():
-    #bitstrings = numpy.random.random_integers(0,maximum,size=8).astype(numpy.uint32) #TRYING THIS OUT
-    import address_space_through_sha256_SDM
-    import random
-    bitstring = address_space_through_sha256_SDM.get_bitstring(str(random.randrange(2**32-1)))
+    bitstring = numpy.random.random_integers(0,2**32-1,size=8).astype(numpy.uint32) #TRYING THIS OUT
+    #import address_space_through_sha256_SDM
+    #import random
+    #bitstring = address_space_through_sha256_SDM.get_bitstring(str(random.randrange(2**32-1)))
     return bitstring
 
 
@@ -270,10 +270,11 @@ def Get_Active_Locations4(bitstring, ctx):
 
 
 def Get_Active_Locations5( ctx):
-    hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.int32)
+    hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.uint32)
     #prg.clear_hash_table_gpu(queue, hash_table_gpu.data, distances_gpu.data)
 
-    prg.get_active_hard_locations_32bit_no_if (queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
+    prg.get_active_hard_locations_32bit (queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()
+
     
     active_hard_locations_gpu, event = my_pyopencl_algorithm.sparse_copy_if(hash_table_gpu, "ary[i] > 0", queue = queue)  
     #active_hard_locations_gpu, final_distances_gpu, event = my_pyopencl_algorithm.sparse_copy_if_with_distances(hash_table_gpu, "ary[i] > 0", extra_args = [distances_gpu], queue = queue)  
@@ -281,9 +282,31 @@ def Get_Active_Locations5( ctx):
     active = active_hard_locations_gpu.get()
     count = active.size
 
-    final_distances_gpu = cl_array.Array(queue, (count,), dtype=numpy.int32)
+    final_distances_gpu = cl_array.Array(queue, (count,), dtype=numpy.uint32)
 
     prg.get_HL_distances_from_gpu(queue, (count,), None, active_hard_locations_gpu.data, distances_gpu.data, final_distances_gpu.data)
+
+
+    return count, active_hard_locations_gpu.get(), final_distances_gpu.get()
+
+
+
+def Get_Active_Locations5_2_dist_computations( ctx):
+    hash_table_gpu = cl_array.zeros(queue, (HASH_TABLE_SIZE,), dtype=numpy.uint32)
+    #prg.clear_hash_table_gpu(queue, hash_table_gpu.data, distances_gpu.data)
+
+
+    prg.get_active_hard_locations_32bit_no_if_2_dist_computes (queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, hash_table_gpu.data ).wait()    
+    
+    active_hard_locations_gpu, event = my_pyopencl_algorithm.sparse_copy_if(hash_table_gpu, "ary[i] > 0", queue = queue)  
+    #active_hard_locations_gpu, final_distances_gpu, event = my_pyopencl_algorithm.sparse_copy_if_with_distances(hash_table_gpu, "ary[i] > 0", extra_args = [distances_gpu], queue = queue)  
+
+    active = active_hard_locations_gpu.get()
+    count = active.size
+
+    final_distances_gpu = cl_array.Array(queue, (count,), dtype=numpy.uint32)
+
+    prg.get_HL_distances_from_gpu_2nd_compute(queue, (count,), None, bitstring_gpu, memory_addresses_gpu.data, active_hard_locations_gpu.data, final_distances_gpu.data)
 
     return count, active_hard_locations_gpu.get(), final_distances_gpu.get()
 
@@ -356,14 +379,12 @@ for platform in cl.get_platforms():
         print("Device memory: ", device.global_mem_size//1024//1024//1024, 'GB')
         print("Device max clock speed:", device.max_clock_frequency, 'MHz')
         print("Device compute units:", device.max_compute_units)
- 
 
-
-for platform in cl.get_platforms():
-    for device in platform.get_devices():
         Platform_name = platform.name
         Device_name = device.name + ' on platform ' + platform.name
         print Device_name
+ 
+
 
 
 
@@ -379,7 +400,8 @@ for x in range(num_times):
     bitstring = Get_Random_Bitstring()
     bitstring_gpu = Get_Bitstring_GPU_Buffer(ctx, bitstring)  #Optimize THIS!
     
-    count, active_hard_locations, distances = Get_Active_Locations5(ctx) 
+    count, active_hard_locations, distances = Get_Active_Locations5 (ctx) 
+    #count, active_hard_locations, distances = Get_Active_Locations5_2_dist_computations (ctx) 
     #active_hard_locations = Get_Active_Locations2(ctx)
     
     #write_x_at_x_kanerva(active_hard_locations,bitstring)
@@ -422,3 +444,46 @@ for checkbit in range (256):
 
 '''
 
+''' 
+Profiling... first time.  20,000 GPU run on W9000-liquid-cool
+
+python -m cProfile -s cumtime SDM_OpenCL_get_active_locations.py 
+
+Looks like sparse_copy_if is taking too long... 
+also, what is array.py get() being called from?  sparse_copy_if?  
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.183    1.183   38.805   38.805 SDM_OpenCL_get_active_locations.py:1(<module>)
+    20000    6.638    0.000   35.206    0.002 SDM_OpenCL_get_active_locations.py:272(Get_Active_Locations5)
+    20000    0.567    0.000   18.141    0.001 my_pyopencl_algorithm.py:113(sparse_copy_if)
+    80000    0.502    0.000   11.965    0.000 array.py:671(get)
+    80001    9.517    0.000    9.752    0.000 __init__.py:930(enqueue_copy)
+    20007    0.216    0.000    6.956    0.000 __init__.py:178(build)
+    20007    0.012    0.000    6.607    0.000 __init__.py:219(_build_and_catch_errors)
+    20007    0.017    0.000    6.595    0.000 __init__.py:210(<lambda>)
+    20007    0.105    0.000    6.577    0.000 cache.py:469(create_built_program_from_source_cached)
+    20007    0.831    0.000    5.438    0.000 cache.py:320(_create_built_program_from_source_cached)
+    20007    0.617    0.000    3.378    0.000 cache.py:247(retrieve_from_cache)
+   140003    2.136    0.000    2.932    0.000 array.py:447(__init__)
+   140002    1.393    0.000    2.771    0.000 __init__.py:499(kernel_call)
+    20000    0.564    0.000    2.609    0.000 scan.py:1292(__call__)
+    20001    0.066    0.000    1.997    0.000 array.py:1686(zeros)
+        1    0.005    0.005    1.709    1.709 __init__.py:767(create_some_context)
+        2    0.000    0.000    1.704    0.852 __init__.py:794(get_input)
+        2    1.704    0.852    1.704    0.852 {raw_input}
+    20001    0.039    0.000    1.386    0.000 array.py:1043(fill)
+   140002    1.111    0.000    1.339    0.000 __init__.py:530(kernel_set_args)
+    20002    0.203    0.000    1.321    0.000 array.py:197(kernel_runner)
+    80001    0.646    0.000    1.046    0.000 stride_tricks.py:22(as_strided)
+    20007    0.831    0.000    1.034    0.000 __init__.py:415(program_build)
+   820157    0.962    0.000    0.962    0.000 __init__.py:317(result)
+    60006    0.152    0.000    0.862    0.000 __init__.py:164(__getattr__)
+    40000    0.092    0.000    0.754    0.000 array.py:590(_new_with_changes)
+   120012    0.320    0.000    0.745    0.000 __init__.py:460(wrapper)
+    20007    0.057    0.000    0.722    0.000 cache.py:80(__init__)
+    60006    0.534    0.000    0.649    0.000 __init__.py:492(kernel_init)
+    20007    0.610    0.000    0.610    0.000 {posix.open}
+    20008    0.488    0.000    0.606    0.000 {cPickle.load}
+''' 

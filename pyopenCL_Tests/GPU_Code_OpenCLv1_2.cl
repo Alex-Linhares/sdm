@@ -14,7 +14,6 @@ inline uint nvidia_popcount(const uint i) {
 
 
 /*
-<<<<<<< Updated upstream
    * Hacker's Delight 32 bit pop function:
    * http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.c.txt
    * 
@@ -49,31 +48,6 @@ Speed test:  if we can send/receive only the active HLs, instead of the entire h
 (presuming, of course, that additional computation is negligible...)
 */
 
-/*
-=======
->>>>>>> Stashed changes
-#define HASH_TABLE_SIZE 48781
-#define HASH_TABLE_SIZE2 48780
-#define HASH_TABLE_SIZE3 48779
-#define HASH_TABLE_SIZE4 48778
-#define HASH_TABLE_SIZE5 48777
-#define HASH_TABLE_SIZE6 48776
-#define HASH_TABLE_SIZE7 48775
-*/
-
-
-
-/*
-#define HASH_TABLE_SIZE 12043
-#define HASH_TABLE_SIZE2 12042
-#define HASH_TABLE_SIZE3 12041
-#define HASH_TABLE_SIZE4 12040
-#define HASH_TABLE_SIZE5 12039
-#define HASH_TABLE_SIZE6 12038
-#define HASH_TABLE_SIZE7 12037
-*/
-
-
 // HASH_TABLE_SIZE must be prime.  The higher it is, the more bandwidth, but less collisions.  It should also be "far" from a power of 2. 
 
 /* BROGLIATO's CODE for reading & writing
@@ -91,9 +65,7 @@ inline int is_bit_true_32(bitstring* a, int bit) {
 }
 
 
-int bs_bitsign(bitstring* a, int bit) {
-  return (bs_bit(a, bit) ? 1 : -1);
-}
+
 
 
 
@@ -123,11 +95,26 @@ bitstring* hl_read(hardlocation* hl) {
   return bs_init_adder(bs_alloc(), hl->adder);
 }
 
-
-
-
 */ 
 
+
+inline int bs_bitsign(bitstring* a, int bit) {
+  return (bs_bit(a, bit) ? 1 : -1);
+}
+
+__kernel void hl_write(__global uint8 *hl, __global uint8 *data, __global char *HL_adder) 
+{
+  __local int dim, a;
+  for(i=0; i<bs_dimension; i++) 
+  //This is the code of the write kernel
+  {
+    a = bs_bitsign(data, i);
+    if (a > 0) {
+      if (HL_adder[gid,dim] < 127) HL_adder[gid,dim]++;
+    } else if (a < 0) {
+      if (HL_adder[gid, dim] > -127) HL_adder[gid,dim]--;
+  }
+}
 
 
 
@@ -173,20 +160,30 @@ __kernel void get_active_hard_locations(__global ulong4 *HL_address, __global ul
   }
 }
 
-__kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __global uint8 *bitstring, __global int *distances, __global int *hash_table_gpu)
+
+
+
+
+
+
+
+
+__kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __constant uint8 *bitstring, __global int *distances, __global int *hash_table_gpu)
 {
-  __private int mem_pos;
+  __private uint mem_pos;
   __private uint8 Aux;
-  __private int hash_index;
-        
+  __private uint hash_index;
+  __local uint distance ;
+
   mem_pos = get_global_id(0);
 
   Aux = HL_address[mem_pos] ^ bitstring[0];
   Aux = popcount(Aux);
 
-  distances [mem_pos] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+  //distances [mem_pos] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+  distance = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
 
-  if (distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
+  if (distance<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
   {                                                 
     hash_index = (mem_pos % HASH_TABLE_SIZE);          // Hashing 7 times, see (cormen et al) "introduction to algorihms" section 12.4, on "open addressing". Performance doesn't degrade in the macbook pro.
     if (hash_table_gpu[hash_index]>0) {              // 7 reaches diminishing returns; in parallel the system can read 0s simultaneously, and may have a collision..
@@ -196,11 +193,11 @@ __kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __glob
         if (hash_table_gpu[hash_index]>0) {
           hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE4)) % HASH_TABLE_SIZE; 
           if (hash_table_gpu[hash_index]>0) {
-          hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
-          if (hash_table_gpu[hash_index]>0) {
-            hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
+            hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE5)) % HASH_TABLE_SIZE; 
             if (hash_table_gpu[hash_index]>0) {
-              hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
+              hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE6)) % HASH_TABLE_SIZE; 
+              if (hash_table_gpu[hash_index]>0) {
+                hash_index= (hash_index + 1 + (mem_pos % HASH_TABLE_SIZE7)) % HASH_TABLE_SIZE; 
               }
             }
           }
@@ -208,7 +205,8 @@ __kernel void get_active_hard_locations_32bit(__global uint8 *HL_address, __glob
       }  
     }
     hash_table_gpu[hash_index]=mem_pos;
-    distances[hash_index]=distances[mem_pos];
+    //distances[hash_index]=distances[mem_pos];   ???
+    distances[mem_pos]= distance;
   }
 }
 
@@ -229,7 +227,7 @@ b_bigger --;
 equal = ~(a_bigger |b_bigger); 
 from : https://www.khronos.org/message_boards/showthread.php/8562-Do-i-have-divergence-with-(bool)-val1-val2-operator?p=27979&viewfull=1#post27979
 */
-__kernel void get_active_hard_locations_32bit_no_if(__global uint8 *HL_address, __global uint8 *bitstring, __global uint *distances, __global uint *hash_table_gpu)
+__kernel void get_active_hard_locations_32bit_no_if(__global uint8 *HL_address, __constant uint8 *bitstring, __global uint *distances, __global uint *hash_table_gpu)
 {
   __private uint mem_pos;
   __local uint8 Aux;
@@ -252,21 +250,63 @@ __kernel void get_active_hard_locations_32bit_no_if(__global uint8 *HL_address, 
   distances[mem_pos]= distance;
 }
 
-
-
-
-
-
-
-
-
-
 __kernel void get_HL_distances_from_gpu(__global int *active_hard_locations_gpu, __global int *distances, __global int *final_distances_gpu)
 {
   __private uint gid;
   gid = get_global_id(0);  
   final_distances_gpu [gid] = distances [ active_hard_locations_gpu [gid] ];
 }
+
+
+
+
+//called by prg.get_active_hard_locations_32bit_no_if_2_dist_computes (queue, (HARD_LOCATIONS,), None, memory_addresses_gpu.data, bitstring_gpu, distances_gpu.data, hash_table_gpu.data ).wait()    
+__kernel void get_active_hard_locations_32bit_no_if_2_dist_computes (__global uint8 *HL_address, __constant uint8 *bitstring, __global uint *hash_table_gpu)
+{
+  __private uint mem_pos;
+  __local uint8 Aux;
+  __private uint hash_index;
+  __local uint distance;
+        
+  mem_pos = get_global_id(0);
+
+  Aux = HL_address[mem_pos] ^ bitstring[0];
+  Aux = popcount(Aux);
+
+  //distances [mem_pos] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+  distance = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+
+  if (distance<ACCESS_RADIUS_THRESHOLD) //(distances[mem_pos]<ACCESS_RADIUS_THRESHOLD)   //104 is the one: 128-24: mu-3sigma. With seed = 123456789 (see python code), we get 1153 Active Hard Locations (re-check this)
+  {                                                 
+    hash_index = ( (mem_pos) ^ hash_table_gpu[(mem_pos) %HASH_TABLE_SIZE]) % HASH_TABLE_SIZE;
+    hash_table_gpu[hash_index]=mem_pos;
+  }
+  //distance has to be recomputed later, after the hash table is sorted out...  This way, we never send 2**20 uints... 
+}
+
+
+// called by prg.get_HL_distances_from_gpu_2nd_compute(queue, (count,), None, bitstring_gpu, memory_addresses.gpu.data, active_hard_locations_gpu.data, final_distances_gpu.data)
+__kernel void get_HL_distances_from_gpu_2nd_compute(__constant uint8 *bitstring, __global uint8 *HL_address, __global uint *active_hard_locations_gpu, __global uint *final_distances_gpu)
+{
+  __private uint gid;
+  __local uint8 Aux;
+        
+  gid = get_global_id(0);
+
+  Aux = HL_address[active_hard_locations_gpu[gid]] ^ bitstring[0];
+  Aux = popcount(Aux);
+
+  final_distances_gpu[gid] = (uint) (Aux.s0+Aux.s1+Aux.s2+Aux.s3+Aux.s4+Aux.s5+Aux.s6+Aux.s7);
+}
+
+
+
+
+
+
+
+
+
 
 __kernel void copy_final_results(__global int *final_locations_gpu, __global int *active_hard_locations_gpu, __global int *final_distances_gpu, __global int *hash_table_gpu)
 {
